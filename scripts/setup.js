@@ -8,8 +8,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.join(__dirname, '..');
 
+const isDryRun = process.argv.includes('--dry-run');
+
 console.log('==================================================');
 console.log('AGY-memory: Interactive Setup for Antigravity IDE');
+if (isDryRun) {
+  console.log('*** DRY RUN MODE: No files will be modified ***');
+}
 console.log('==================================================\n');
 
 const isInteractive = process.stdout.isTTY && !process.env.CI && !process.argv.includes('--non-interactive');
@@ -95,8 +100,12 @@ async function setup() {
   }
   
   try {
-    fs.writeFileSync(path.join(repoRoot, '.env'), envContent, 'utf8');
-    console.log('✓ Local .env file successfully created.');
+    if (isDryRun) {
+      console.log('✓ [Dry Run] Would write to local .env file:\n' + envContent);
+    } else {
+      fs.writeFileSync(path.join(repoRoot, '.env'), envContent, 'utf8');
+      console.log('✓ Local .env file successfully created.');
+    }
   } catch (err) {
     console.error('Warning: Failed to write .env file:', err.message);
   }
@@ -108,7 +117,11 @@ async function setup() {
   // Ensure config directory exists
   if (!fs.existsSync(configDir)) {
     try {
-      fs.mkdirSync(configDir, { recursive: true });
+      if (isDryRun) {
+        console.log(`[Dry Run] Would create config directory: ${configDir}`);
+      } else {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
     } catch (err) {
       console.error('Failed to create configuration directory:', err.message);
       if (rl) rl.close();
@@ -137,12 +150,19 @@ async function setup() {
 
   // 6. Write back to mcp_config.json
   try {
-    fs.writeFileSync(configPath, JSON.stringify(mcpConfig, null, 2), 'utf8');
-    console.log('\n==================================================');
-    console.log('✓ Configuration complete!');
-    console.log('✓ MCP Server successfully registered in Antigravity IDE!');
-    console.log('✓ It will now start automatically whenever the IDE launches.');
-    console.log('==================================================\n');
+    if (isDryRun) {
+      console.log(`✓ [Dry Run] Would write server config to ${configPath}:\n` + JSON.stringify(mcpConfig.mcpServers[serverName], null, 2));
+      console.log('\n==================================================');
+      console.log('✓ [Dry Run] Configuration simulation complete!');
+      console.log('==================================================\n');
+    } else {
+      fs.writeFileSync(configPath, JSON.stringify(mcpConfig, null, 2), 'utf8');
+      console.log('\n==================================================');
+      console.log('✓ Configuration complete!');
+      console.log('✓ MCP Server successfully registered in Antigravity IDE!');
+      console.log('✓ It will now start automatically whenever the IDE launches.');
+      console.log('==================================================\n');
+    }
   } catch (err) {
     console.error('Failed to write mcp_config.json:', err.message);
   }
@@ -200,15 +220,22 @@ When ending an active coding session, you MUST close the session using the memor
     if (fs.existsSync(globalAgentsPath)) {
       const existingContent = fs.readFileSync(globalAgentsPath, 'utf8');
       if (!existingContent.includes('Antigravity Persistent Memory Guidelines')) {
-        // Non-destructive append
-        fs.appendFileSync(globalAgentsPath, `\n\n${templateContent}`, 'utf8');
-        console.log('✓ Appended memory guidelines to your global AGENTS.md file.');
+        if (isDryRun) {
+          console.log(`✓ [Dry Run] Would append guidelines to global AGENTS.md at ${globalAgentsPath}`);
+        } else {
+          fs.appendFileSync(globalAgentsPath, `\n\n${templateContent}`, 'utf8');
+          console.log('✓ Appended memory guidelines to your global AGENTS.md file.');
+        }
       } else {
         console.log('✓ Global AGENTS.md already contains memory guidelines.');
       }
     } else {
-      fs.writeFileSync(globalAgentsPath, templateContent, 'utf8');
-      console.log('✓ Created global AGENTS.md file with memory guidelines.');
+      if (isDryRun) {
+        console.log(`✓ [Dry Run] Would create global AGENTS.md at ${globalAgentsPath}`);
+      } else {
+        fs.writeFileSync(globalAgentsPath, templateContent, 'utf8');
+        console.log('✓ Created global AGENTS.md file with memory guidelines.');
+      }
     }
   } catch (err) {
     console.error('Failed to update global AGENTS.md:', err.message);
