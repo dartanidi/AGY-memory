@@ -17,6 +17,10 @@ async function getDb(config) {
     
     // Enable foreign keys explicitly in SQLite
     await dbInstance.run('PRAGMA foreign_keys = ON;');
+    // Enable WAL journal mode for concurrent reads/writes
+    await dbInstance.run('PRAGMA journal_mode = WAL;');
+    // Set busy timeout to 5000ms to queue writes instead of failing immediately
+    await dbInstance.run('PRAGMA busy_timeout = 5000;');
   }
   return dbInstance;
 }
