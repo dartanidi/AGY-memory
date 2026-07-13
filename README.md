@@ -37,7 +37,14 @@ AGY-memory can be configured via environment variables, specified in a `.env` fi
 
 ### LLM Summarization Settings (Optional)
 
-On session end (`memory_end_session`), the server can automatically summarize the activity log and update your todo list or strategic context. If no API keys are provided, it falls back to local text logging.
+On session end (`memory_end_session`), the server can automatically summarize the activity log and update your todo list or strategic context.
+
+> [!NOTE]
+> **Client-Side vs Server-Side Summarization (Zero-API Closeout)**:
+> If you are using our custom agent configuration (e.g., the rules in `.agents/AGENTS.md`), the agent itself pre-computes the summaries, todo updates, and constraints locally and passes them directly to the tool. **In this case, configuring server-side LLM keys is completely superfluous**, as the server will bypass any API calls and save the pre-computed values directly, reducing latency and saving API costs.
+>
+> **When are these settings useful?**
+> They are required only if you connect this MCP server to standard/external clients (e.g., standard Claude Desktop, Cursor, or raw CLI clients) that only send a raw `raw_activity_log`. In that case, the server uses these keys to perform the summarization on the server side.
 
 * `DEEPSEEK_API_KEY`: API key for DeepSeek.
 * `DEEPSEEK_API_URL`: DeepSeek API Base URL. Defaults to `https://api.deepseek.com`.

@@ -1,6 +1,6 @@
 {
   "name": "antigravity-remote-memory",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "type": "module",
   "main": "server.js",
   "scripts": {
