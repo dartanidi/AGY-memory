@@ -7,9 +7,10 @@ This codebase provides an MCP (Model Context Protocol) server that interfaces wi
 ## Structure
 
 * `server.js`: MCP Server entry point and tool handler registrations.
-* `db.js`: Database connection pool and initialization queries.
-* `.agents/`: Local agent configuration.
-* `Athena-Public/`: Subdirectory containing the Athena engine framework (managed separately).
+* `db.js`: Central database connection gateway.
+* `db/`: Database engine drivers (`mysql.js` and `sqlite.js`).
+* `scripts/`: Utilities including `setup.js` (installation wizard) and `db-migrate.js` (data migration).
+* `templates/`: Templates for global agent guidelines (`AGENTS.md`).
 
 ## Features
 
@@ -55,6 +56,8 @@ On session end (`memory_end_session`), the server can automatically summarize th
 
 ### Registration & Auto-Launch in Antigravity IDE
 
+#### A. Automatic Setup (Recommended)
+
 To install the server and configure it to run automatically in the background when the Antigravity IDE (AGY) launches, you only need to run:
 
 1. **Clone the repository**:
@@ -76,9 +79,7 @@ Running `npm install` will automatically:
   - Ask for user confirmation before saving any checkpoints (`memory_save_note`) or closing sessions (`memory_end_session`).
   - Automatically run the client-side *Zero-API Closeout Protocol* to save API cost.
 
-#### Manual Configuration (Alternative)
-
-#### B. Manual Setup
+#### B. Manual Setup (Alternative)
 
 If you prefer to configure it manually, edit your `mcp_config.json` file (typically located under `~/.gemini/antigravity-ide/mcp_config.json`) and append the following server configuration:
 
