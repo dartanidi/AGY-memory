@@ -46,9 +46,26 @@ On session end (`memory_end_session`), the server can automatically summarize th
 * `GEMINI_API_KEY`: API key for Google Gemini.
 * `GEMINI_MODEL`: Gemini model to use (e.g. `gemini-1.5-flash`).
 
-### Registering with Antigravity IDE
+### Registration & Auto-Launch in Antigravity IDE
 
-To register the server as an MCP tool, add it to your `mcp_config.json` configuration file:
+To make the persistent memory server run automatically in the background when the Antigravity IDE (AGY) launches, you can either register it automatically or manually.
+
+#### A. Automatic Setup (Recommended)
+
+1. Create a `.env` file in the repository root and fill in your environment variables (Database credentials, LLM keys, etc.).
+2. Run the setup script:
+   ```bash
+   node scripts/setup.js
+   ```
+This script automatically:
+* Locates your local Antigravity IDE configuration directory.
+* Resolves the absolute path of your active Node.js executable and server files.
+* Imports database and API key parameters from your local `.env`.
+* Configures and registers the MCP server inside `mcp_config.json`.
+
+#### B. Manual Setup
+
+If you prefer to configure it manually, edit your `mcp_config.json` file (typically located under `~/.gemini/antigravity-ide/mcp_config.json`) and append the following server configuration:
 
 ```json
 {
