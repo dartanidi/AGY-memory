@@ -147,6 +147,61 @@ async function setup() {
     console.error('Failed to write mcp_config.json:', err.message);
   }
 
+  // 7. Write/Append Global Agent Guidelines (AGENTS.md)
+  console.log('\nConfiguring global agent instructions...');
+  const globalConfigDir = path.join(os.homedir(), '.gemini', 'config');
+  const globalAgentsPath = path.join(globalConfigDir, 'AGENTS.md');
+  const templatePath = path.join(repoRoot, 'templates', 'AGENTS.md');
+  
+  if (!fs.existsSync(globalConfigDir)) {
+    try {
+      fs.mkdirSync(globalConfigDir, { recursive: true });
+    } catch (err) {
+      console.error('Failed to create global configuration directory:', err.message);
+    }
+  }
+
+  try {
+    let templateContent = '';
+    if (fs.existsSync(templatePath)) {
+      templateContent = fs.readFileSync(templatePath, 'utf8');
+    } else {
+      templateContent = `# Antigravity Persistent Memory Guidelines
+
+## Auto-Start Behaviour
+The persistent memory server is registered globally in mcp_config.json and launches automatically in the background whenever the Antigravity IDE (AGY) starts.
+
+## Memory Saving & Shards
+You have access to a set of persistent database memory tools. You MUST actively maintain the memory bank of the workspace:
+1. **Save Checkpoints**: Call memory_save_note to record important code edits, structural changes, major decisions, or command outcomes.
+2. **Ask Confirmation**: ALWAYS ask the user for confirmation before calling memory_save_note or memory_end_session.
+
+## Zero-API Closeout Protocol (Mandatory)
+When ending an active coding session, you MUST close the session using the memory_end_session tool. Pre-compute the summaries client-side:
+1. Analyze session history.
+2. Confirm with user.
+3. Pre-compute session summary, todo list, known issues, and strategic context.
+4. Pass these parameters directly to memory_end_session.
+`;
+    }
+
+    if (fs.existsSync(globalAgentsPath)) {
+      const existingContent = fs.readFileSync(globalAgentsPath, 'utf8');
+      if (!existingContent.includes('Antigravity Persistent Memory Guidelines')) {
+        // Non-destructive append
+        fs.appendFileSync(globalAgentsPath, `\n\n${templateContent}`, 'utf8');
+        console.log('✓ Appended memory guidelines to your global AGENTS.md file.');
+      } else {
+        console.log('✓ Global AGENTS.md already contains memory guidelines.');
+      }
+    } else {
+      fs.writeFileSync(globalAgentsPath, templateContent, 'utf8');
+      console.log('✓ Created global AGENTS.md file with memory guidelines.');
+    }
+  } catch (err) {
+    console.error('Failed to update global AGENTS.md:', err.message);
+  }
+
   if (rl) rl.close();
 }
 

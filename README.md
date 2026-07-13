@@ -72,6 +72,9 @@ Running `npm install` will automatically:
 * Immediately trigger the **interactive setup wizard** (`setup.js`) directly in your terminal to choose your database (SQLite or MySQL) and configure optional LLM keys.
 * Write your local `.env` configuration file.
 * Register the MCP server in your local Antigravity IDE `mcp_config.json` configuration file, ensuring it auto-starts in the background whenever the IDE launches.
+* Configure or append the **global agent guidelines** in your global `~/.gemini/config/AGENTS.md` file, instructing the IDE agent to:
+  - Ask for user confirmation before saving any checkpoints (`memory_save_note`) or closing sessions (`memory_end_session`).
+  - Automatically run the client-side *Zero-API Closeout Protocol* to save API cost.
 
 #### Manual Configuration (Alternative)
 
