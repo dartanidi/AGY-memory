@@ -11,6 +11,7 @@ This codebase provides an MCP (Model Context Protocol) server that interfaces wi
 * `db/`: Database engine drivers (`mysql.js` and `sqlite.js`).
 * `scripts/`: Utilities including `setup.js` (installation wizard) and `db-migrate.js` (data migration).
 * `templates/`: Templates for global agent guidelines (`AGENTS.md`).
+* `docs/`: Technical specifications and design documents.
 
 ## Features
 
@@ -119,3 +120,15 @@ MIGRATE_DST_SQLITE_PATH=/path/to/new.db
 # Run the migration tool
 node scripts/db-migrate.js
 ```
+
+## Roadmap
+
+| Version | Feature | Status |
+|:--------|:--------|:-------|
+| v1.0.0 | Dual MySQL/SQLite support, scope-based context, explicit constraints, interactive setup wizard, global agent rules, dry-run mode | ✅ RC2 |
+| v1.1.0 | Context Compaction Layer — deduplicate and merge overlapping scope entries | 📋 Planned |
+| v1.2.0 | `memory_compact_context` MCP tool | 📋 Planned |
+| v1.3.0 | Server-side automatic compaction with LLM fallback | 📋 Planned |
+
+> See [`docs/context-compaction-spec.md`](docs/context-compaction-spec.md) for the full technical specification of the Context Compaction Layer.
+
