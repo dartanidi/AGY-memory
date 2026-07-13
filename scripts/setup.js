@@ -214,6 +214,13 @@ When ending an active coding session, you MUST close the session using the memor
 2. Confirm with user.
 3. Pre-compute session summary, todo list, known issues, and strategic context.
 4. Pass these parameters directly to memory_end_session.
+
+## Context Compaction Protocol (Periodic Maintenance)
+To prevent context inflation and database pollution, you must periodically deduplicate and merge overlapping or obsolete scope states and constraints:
+1. Analyze: When calling memory_get_context, check if there are multiple scopes describing the same conceptual domain, or constraints that have been superseded by newer requirements.
+2. Propose: Propose a compaction plan to the user, showing the merged results.
+3. Confirm: Always ask for the user's explicit confirmation.
+4. Call Tool: Use the memory_compact_context tool to archive obsolete rows (active = 0) and insert/update the new merged states in a single operation.
 `;
     }
 

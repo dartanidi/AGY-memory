@@ -34,13 +34,11 @@ export async function query(sql, params = [], config = {}) {
   const isSelect = normalizedSql.trim().toLowerCase().startsWith('select');
   
   if (isSelect) {
-    return await db.all(normalizedSql, params);
+    const rows = await db.all(normalizedSql, params);
+    return [rows, null];
   } else {
     const result = await db.run(normalizedSql, params);
-    // Return an array-like structure or query result adapter if needed,
-    // but typically mysql returns [rows] or result metadata. 
-    // We return the result object containing lastID, changes.
-    return result;
+    return [result, null];
   }
 }
 
@@ -86,6 +84,8 @@ export async function initializeDatabase(config = {}) {
       scope VARCHAR(100) NOT NULL,
       state_summary TEXT NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      active BOOLEAN DEFAULT 1,
+      superseded_by VARCHAR(255) DEFAULT NULL,
       PRIMARY KEY (workspace_path, scope),
       FOREIGN KEY (workspace_path) REFERENCES workspace_context(workspace_path) ON DELETE CASCADE
     );`,
@@ -106,9 +106,85 @@ export async function initializeDatabase(config = {}) {
     for (const sql of tables) {
       await db.run(sql);
     }
+    
+    // Perform schema migration for existing SQLite databases
+    try {
+      await db.run('ALTER TABLE workspace_scope_state ADD COLUMN active BOOLEAN DEFAULT 1;');
+    } catch (err) {
+      // Column might already exist, ignore
+    }
+    try {
+      await db.run('ALTER TABLE workspace_scope_state ADD COLUMN superseded_by VARCHAR(255) DEFAULT NULL;');
+    } catch (err) {
+      // Column might already exist, ignore
+    }
+
     console.error('SQLite database tables initialized successfully.');
   } catch (error) {
     console.error('Failed to initialize SQLite database tables:', error);
     throw error;
+  }
+}
+
+export async function compactContext(workspace_path, data, config = {}) {
+  const db = await getDb(config);
+  try {
+    await db.run("BEGIN TRANSACTION;");
+
+    const {
+      compacted_scopes = [],
+      archived_scopes = [],
+      compacted_constraints = [],
+      archived_constraint_ids = []
+    } = data;
+
+    // 1. Archive obsolete scopes
+    if (archived_scopes.length > 0) {
+      for (const scopeName of archived_scopes) {
+        await db.run(
+          "UPDATE workspace_scope_state SET active = 0 WHERE workspace_path = ? AND scope = ?",
+          [workspace_path, scopeName]
+        );
+      }
+    }
+
+    // 2. Insert or update compacted scopes
+    if (compacted_scopes.length > 0) {
+      for (const s of compacted_scopes) {
+        await db.run(
+          `INSERT INTO workspace_scope_state (workspace_path, scope, state_summary, active, superseded_by)
+           VALUES (?, ?, ?, 1, NULL)
+           ON CONFLICT(workspace_path, scope) DO UPDATE SET state_summary = excluded.state_summary, active = 1, superseded_by = NULL, updated_at = CURRENT_TIMESTAMP`,
+          [workspace_path, s.scope, s.state_summary]
+        );
+      }
+    }
+
+    // 3. Archive obsolete constraints
+    if (archived_constraint_ids.length > 0) {
+      for (const cid of archived_constraint_ids) {
+        await db.run(
+          "UPDATE workspace_constraints SET active = 0 WHERE id = ? AND workspace_path = ?",
+          [cid, workspace_path]
+        );
+      }
+    }
+
+    // 4. Insert compacted constraints
+    if (compacted_constraints.length > 0) {
+      for (const c of compacted_constraints) {
+        await db.run(
+          "INSERT INTO workspace_constraints (workspace_path, scope, constraint_type, description, active) VALUES (?, ?, ?, ?, 1)",
+          [workspace_path, c.scope, c.constraint_type, c.description]
+        );
+      }
+    }
+
+    await db.run("COMMIT;");
+    return { status: "success", message: "Context compacted successfully." };
+  } catch (err) {
+    await db.run("ROLLBACK;");
+    console.error("Compaction transaction failed:", err);
+    throw err;
   }
 }

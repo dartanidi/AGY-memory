@@ -5,7 +5,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import pool, { initializeDatabase } from './db.js';
+import pool, { initializeDatabase, compactContext } from './db.js';
 
 // Initialize the MCP Server
 const server = new Server(
@@ -234,6 +234,55 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["workspace_path", "query"],
         },
       },
+      {
+        name: "memory_compact_context",
+        description: "Deduplicate and compact overlapping scope states and constraints for a workspace. Archives obsolete entries (active = 0) and inserts/updates new consolidated states.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            workspace_path: {
+              type: "string",
+              description: "The absolute path of the workspace/project repository."
+            },
+            compacted_scopes: {
+              type: "array",
+              description: "Consolidated scope entries.",
+              items: {
+                type: "object",
+                properties: {
+                  scope: { type: "string" },
+                  state_summary: { type: "string" }
+                },
+                required: ["scope", "state_summary"]
+              }
+            },
+            archived_scopes: {
+              type: "array",
+              description: "Array of scope names to archive (mark inactive).",
+              items: { type: "string" }
+            },
+            compacted_constraints: {
+              type: "array",
+              description: "Consolidated constraints to insert.",
+              items: {
+                type: "object",
+                properties: {
+                  scope: { type: "string" },
+                  constraint_type: { type: "string", enum: ["MUST", "MUST_NOT", "SHOULD", "DEPENDS_ON"] },
+                  description: { type: "string" }
+                },
+                required: ["scope", "constraint_type", "description"]
+              }
+            },
+            archived_constraint_ids: {
+              type: "array",
+              description: "Array of constraint IDs to archive (mark inactive).",
+              items: { type: "integer" }
+            }
+          },
+          required: ["workspace_path"]
+        }
+      }
     ],
   };
 });
@@ -294,7 +343,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         if (scope) {
           const [scopeRows] = await pool.query(
-            "SELECT scope, state_summary, updated_at FROM workspace_scope_state WHERE workspace_path = ? AND scope = ?",
+            "SELECT scope, state_summary, updated_at FROM workspace_scope_state WHERE workspace_path = ? AND scope = ? AND active = 1",
             [workspace_path, scope]
           );
           scopeStates = scopeRows;
@@ -306,7 +355,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           constraints = constraintRows;
         } else {
           const [scopeRows] = await pool.query(
-            "SELECT scope, state_summary, updated_at FROM workspace_scope_state WHERE workspace_path = ?",
+            "SELECT scope, state_summary, updated_at FROM workspace_scope_state WHERE workspace_path = ? AND active = 1",
             [workspace_path]
           );
           scopeStates = scopeRows;
@@ -703,6 +752,32 @@ Respond ONLY with a JSON object in this format (do not include markdown code blo
             {
               type: "text",
               text: JSON.stringify({ query, results: merged }, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "memory_compact_context": {
+        const {
+          workspace_path,
+          compacted_scopes,
+          archived_scopes,
+          compacted_constraints,
+          archived_constraint_ids
+        } = args;
+
+        const result = await compactContext(workspace_path, {
+          compacted_scopes,
+          archived_scopes,
+          compacted_constraints,
+          archived_constraint_ids
+        });
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };

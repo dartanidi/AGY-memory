@@ -66,6 +66,8 @@ export async function initializeDatabase(config) {
       scope VARCHAR(100) NOT NULL,
       state_summary TEXT NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      active BOOLEAN DEFAULT TRUE,
+      superseded_by VARCHAR(255) DEFAULT NULL,
       PRIMARY KEY (workspace_path, scope),
       FOREIGN KEY (workspace_path) REFERENCES workspace_context(workspace_path) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`,
@@ -86,10 +88,88 @@ export async function initializeDatabase(config) {
     for (const sql of tables) {
       await connection.query(sql);
     }
+
+    // Perform schema migration for existing MySQL databases
+    try {
+      await connection.query('ALTER TABLE workspace_scope_state ADD COLUMN active BOOLEAN DEFAULT 1;');
+    } catch (err) {
+      // Column might already exist, ignore
+    }
+    try {
+      await connection.query('ALTER TABLE workspace_scope_state ADD COLUMN superseded_by VARCHAR(255) DEFAULT NULL;');
+    } catch (err) {
+      // Column might already exist, ignore
+    }
+
     console.error('MySQL database tables initialized successfully (with evolved schema).');
   } catch (error) {
     console.error('Failed to initialize MySQL database tables:', error);
     throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function compactContext(workspace_path, data) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const {
+      compacted_scopes = [],
+      archived_scopes = [],
+      compacted_constraints = [],
+      archived_constraint_ids = []
+    } = data;
+
+    // 1. Archive obsolete scopes
+    if (archived_scopes.length > 0) {
+      for (const scopeName of archived_scopes) {
+        await connection.query(
+          "UPDATE workspace_scope_state SET active = 0 WHERE workspace_path = ? AND scope = ?",
+          [workspace_path, scopeName]
+        );
+      }
+    }
+
+    // 2. Insert or update compacted scopes
+    if (compacted_scopes.length > 0) {
+      for (const s of compacted_scopes) {
+        await connection.query(
+          `INSERT INTO workspace_scope_state (workspace_path, scope, state_summary, active, superseded_by)
+           VALUES (?, ?, ?, 1, NULL)
+           ON DUPLICATE KEY UPDATE state_summary = VALUES(state_summary), active = 1, superseded_by = NULL, updated_at = CURRENT_TIMESTAMP`,
+          [workspace_path, s.scope, s.state_summary]
+        );
+      }
+    }
+
+    // 3. Archive obsolete constraints
+    if (archived_constraint_ids.length > 0) {
+      for (const cid of archived_constraint_ids) {
+        await connection.query(
+          "UPDATE workspace_constraints SET active = 0 WHERE id = ? AND workspace_path = ?",
+          [cid, workspace_path]
+        );
+      }
+    }
+
+    // 4. Insert compacted constraints
+    if (compacted_constraints.length > 0) {
+      for (const c of compacted_constraints) {
+        await connection.query(
+          "INSERT INTO workspace_constraints (workspace_path, scope, constraint_type, description, active) VALUES (?, ?, ?, ?, 1)",
+          [workspace_path, c.scope, c.constraint_type, c.description]
+        );
+      }
+    }
+
+    await connection.commit();
+    return { status: "success", message: "Context compacted successfully." };
+  } catch (err) {
+    await connection.rollback();
+    console.error("Compaction transaction failed:", err);
+    throw err;
   } finally {
     connection.release();
   }

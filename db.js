@@ -43,4 +43,8 @@ export async function initializeDatabase() {
   return await activeDriver.initializeDatabase(config);
 }
 
+export async function compactContext(workspace_path, data) {
+  return await activeDriver.compactContext(workspace_path, data, config);
+}
+
 export default pool;

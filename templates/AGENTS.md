@@ -29,3 +29,11 @@ When ending an active coding session (usually prompted by the user or upon task 
 5. **Log Issues**: Extract any newly discovered bugs, issues, or fixes.
 6. **Refine Context**: Update the strategic context if the architecture, technology stack, or file structure evolved.
 7. **Call Tool**: Pass these pre-computed values directly as parameters to `memory_end_session`.
+
+## Context Compaction Protocol (Periodic Maintenance)
+To prevent context inflation and database pollution, you must periodically deduplicate and merge overlapping or obsolete scope states and constraints:
+1. **Analyze**: When calling `memory_get_context`, check if there are multiple scopes describing the same conceptual domain, or constraints that have been superseded by newer requirements.
+2. **Propose**: Propose a compaction plan to the user, showing the merged results.
+3. **Confirm**: Always ask for the user's explicit confirmation.
+4. **Call Tool**: Use the `memory_compact_context` tool to archive obsolete rows (`active = 0`) and insert/update the new merged states in a single operation.
+
