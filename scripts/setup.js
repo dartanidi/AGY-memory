@@ -12,22 +12,35 @@ console.log('==================================================');
 console.log('AGY-memory: Interactive Setup for Antigravity IDE');
 console.log('==================================================\n');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+const isInteractive = process.stdout.isTTY && !process.env.CI && !process.argv.includes('--non-interactive');
 
-const askQuestion = (query, defaultValue = '') => {
-  const prompt = defaultValue ? `${query} [${defaultValue}]: ` : `${query}: `;
-  return new Promise((resolve) => {
-    rl.question(prompt, (answer) => {
-      resolve(answer.trim() || defaultValue);
-    });
+let rl = null;
+let askQuestion = () => Promise.resolve('');
+
+if (isInteractive) {
+  rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
   });
-};
+
+  askQuestion = (query, defaultValue = '') => {
+    const prompt = defaultValue ? `${query} [${defaultValue}]: ` : `${query}: `;
+    return new Promise((resolve) => {
+      rl.question(prompt, (answer) => {
+        resolve(answer.trim() || defaultValue);
+      });
+    });
+  };
+}
 
 async function setup() {
   const mcpEnv = {};
+
+  if (!isInteractive) {
+    console.log('Non-interactive environment detected. Installing with default SQLite configuration...');
+    mcpEnv.DB_TYPE = 'sqlite';
+    mcpEnv.SQLITE_DB_PATH = path.join(repoRoot, 'antigravity_core.db');
+  } else {
 
   // 1. Choose Database Mode
   console.log('--- Database Configuration ---');
@@ -72,6 +85,7 @@ async function setup() {
       mcpEnv.GEMINI_MODEL = await askQuestion('Gemini Model Name', 'gemini-1.5-flash');
     }
   }
+  }
 
   // 3. Write configuration to local .env file
   console.log('\nWriting local configuration to .env...');
@@ -97,7 +111,7 @@ async function setup() {
       fs.mkdirSync(configDir, { recursive: true });
     } catch (err) {
       console.error('Failed to create configuration directory:', err.message);
-      rl.close();
+      if (rl) rl.close();
       process.exit(1);
     }
   }
@@ -133,11 +147,11 @@ async function setup() {
     console.error('Failed to write mcp_config.json:', err.message);
   }
 
-  rl.close();
+  if (rl) rl.close();
 }
 
 setup().catch((err) => {
   console.error('Error during setup:', err);
-  rl.close();
+  if (rl) rl.close();
   process.exit(1);
 });

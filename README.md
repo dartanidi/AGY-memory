@@ -48,20 +48,25 @@ On session end (`memory_end_session`), the server can automatically summarize th
 
 ### Registration & Auto-Launch in Antigravity IDE
 
-To make the persistent memory server run automatically in the background when the Antigravity IDE (AGY) launches, you can either register it automatically or manually.
+To install the server and configure it to run automatically in the background when the Antigravity IDE (AGY) launches, you only need to run:
 
-#### A. Automatic Setup (Recommended)
-
-1. Create a `.env` file in the repository root and fill in your environment variables (Database credentials, LLM keys, etc.).
-2. Run the setup script:
+1. **Clone the repository**:
    ```bash
-   node scripts/setup.js
+   git clone https://github.com/dartanidi/AGY-memory.git
+   cd AGY-memory
    ```
-This script automatically:
-* Locates your local Antigravity IDE configuration directory.
-* Resolves the absolute path of your active Node.js executable and server files.
-* Imports database and API key parameters from your local `.env`.
-* Configures and registers the MCP server inside `mcp_config.json`.
+2. **Install and configure**:
+   ```bash
+   npm install
+   ```
+
+Running `npm install` will automatically:
+* Download all required Node.js dependencies.
+* Immediately trigger the **interactive setup wizard** (`setup.js`) directly in your terminal to choose your database (SQLite or MySQL) and configure optional LLM keys.
+* Write your local `.env` configuration file.
+* Register the MCP server in your local Antigravity IDE `mcp_config.json` configuration file, ensuring it auto-starts in the background whenever the IDE launches.
+
+#### Manual Configuration (Alternative)
 
 #### B. Manual Setup
 

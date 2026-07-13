@@ -1,10 +1,11 @@
 {
   "name": "antigravity-remote-memory",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "node scripts/setup.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
