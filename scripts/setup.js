@@ -186,9 +186,9 @@ async function setup() {
     if (fs.existsSync(templatePath)) {
       templateContent = fs.readFileSync(templatePath, 'utf8');
     } else {
-      templateContent = `# Persistent Memory & Coding Guidelines
+      templateContent = `# Standalone Persistent Memory & Coding Guidelines
 
-This document provides guidelines for persistent session tracking, database maintenance, and high-quality coding workflows. Any AI agent operating in this workspace must follow these rules.
+This document provides comprehensive guidelines for session tracking, database maintenance, high-quality software engineering, and user interface design. Any AI agent operating in this workspace must follow these rules.
 
 ---
 
@@ -218,30 +218,53 @@ To prevent latency and avoid requiring server-side Gemini/DeepSeek API keys, the
 
 ---
 
-## 3. Distilled Coding Workflow (Plan-Execute-Verify)
+## 3. Coding & Engineering Standards (Distilled Athena)
 
-To maintain code quality without external reasoning engines:
+### The External Verification Mandate
+* **Never** answer questions or write code based solely on your internal training weights.
+* **Always** ground your reasoning by calling at least one tool (grep, file read, search, or run command) to verify files, versions, and active code state before outputting a solution.
 
-### Phase A: Research & Plan
-* Before writing any code, search the codebase, check dependencies, and locate modified files.
-* Propose a brief, bulleted implementation plan to the user.
-* Obtain explicit user approval before proceeding.
-
-### Phase B: Execute & Track
-* Implement changes in small, logical steps.
-* Maintain documentation integrity: do not delete unrelated comments or docstrings.
-* Call \`memory_save_note\` to checkpoint your changes after key files are modified.
-
-### Phase C: Verify & Document
-* Verify that the project builds and runs (e.g., run tests, syntax checks, or run dry setups).
-* Create or update a walkthrough documenting:
-  * Key changes made.
-  * Test commands run and their results.
-* Summarize your work concisely when ending your turn.
+### Development Workflow
+1. **Research & Plan**: Before making changes, check the workspace structure and locate all relevant files. Propose a brief, bulleted implementation plan to the user and obtain approval before editing.
+2. **Execution**: Make changes in small, logically structured steps. Preserve all existing comments and docstrings unless explicitly asked to modify them.
+3. **Verification**: Run tests, check syntax, and verify that the application builds and runs correctly.
+4. **Checkpointing**: Call \`memory_save_note\` to checkpoint your changes after key files are modified (e.g., after database changes, API changes).
+5. **Documentation**: Create or update a walkthrough documenting the changes and verification results.
 
 ---
 
-## 4. Multi-Agent Safety Rules
+## 4. UI & Design DNA (Aesthetics Standard)
+
+When developing or modifying front-end code (HTML, CSS, JS):
+
+* **Rich Aesthetics**: Interfaces must feel premium and state-of-the-art. Use harmonious color palettes (curated HSL values, dark modes, subtle gradients, and glassmorphism) instead of default primary colors.
+* **Modern Typography**: Use modern typography (e.g., Google Fonts like Inter, Outfit, or Roboto) rather than generic system fonts.
+* **Dynamic Design**: Add hover states, smooth transitions, and subtle micro-animations for interactive elements.
+* **No Placeholders**: Never use placeholder text or broken/empty image frames. Use working illustrations or mockups.
+* **Responsive Layouts**: Ensure all layouts are fully responsive and adapt to mobile, tablet, and desktop screens.
+
+---
+
+## 5. Anti-Patterns to Avoid
+
+* ❌ ** cd commands**: Never run \`cd\` in terminal commands since shell state is not shared between transport processes. Always execute commands with the proper working directory (\`Cwd\`) parameter.
+* ❌ **Inventing APIs**: Do not write code using library APIs, fields, or config files without first reading the code or docs to verify they exist in this environment.
+* ❌ **Placeholders & TODOs**: Do not leave unfinished \`// TODO\` comments or mock logic in production files.
+* ❌ **Over-writing Entire Files**: Avoid replacing entire files when localized edits (\`replace_file_content\` or \`multi_replace_file_content\`) are sufficient.
+
+---
+
+## 6. Communication & Output Standards
+
+* **Concise & Direct**: Keep responses short and to the point. Avoid conversational filler or long disclaimers.
+* **Clickable Links**: Always create clickable markdown links for all referenced files and code symbols (classes, types, functions, structs) using the \`file://\` scheme:
+  * Correct: \`[server.js](file:///absolute/path/to/server.js#L50-L80)\` or \`[ClassName](file:///path/to/file.js)\`
+  * Incorrect: \`\\\`server.js\\\`\` (do not use raw code tags for paths).
+* **Ask-Don't-Assume**: If requirements are ambiguous, clarify them with the user rather than making assumptions.
+
+---
+
+## 7. Multi-Agent Safety Rules
 
 When multiple AI agents work in this repository or workspace concurrently:
 
