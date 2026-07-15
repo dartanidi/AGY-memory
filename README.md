@@ -127,6 +127,7 @@ node scripts/db-migrate.js
 |:--------|:--------|:-------|
 | v1.0.0 | Dual MySQL/SQLite support, scope-based context, explicit constraints, interactive setup wizard, global agent rules, dry-run mode | ✅ Released |
 | v1.2.0 | Context Compaction Layer — client-side deduplication, merging, and `memory_compact_context` tool | ✅ Released |
+| v1.2.1 | Standalone Portability — Distilled agent guidelines, offline SQLite defaults, and multi-client support | ✅ Released |
 | v1.3.0 | Server-side automatic compaction with LLM fallback | 📋 Planned |
 
 > See [`docs/context-compaction-spec.md`](docs/context-compaction-spec.md) for the full technical specification of the Context Compaction Layer.
